@@ -18,7 +18,7 @@ import { ChatState } from "../Context/ChatProvider";
 const ENDPOINT = "https://chit-chat-8viy.onrender.com/";
 var socket, selectedChatCompare;
 
-const SingleChat = ({ fetchAgain, setFetchAgain }) => {
+const SingleChat = () => {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [newMessage, setNewMessage] = useState("");
@@ -35,8 +35,15 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
       preserveAspectRatio: "xMidYMid slice",
     },
   };
-  const { selectedChat, setSelectedChat, user, notification, setNotification } =
-    ChatState();
+  const {
+    selectedChat,
+    setSelectedChat,
+    user,
+    notification,
+    setNotification,
+    fetchAgain,
+    setFetchAgain,
+  } = ChatState();
 
   const fetchMessages = async () => {
     if (!selectedChat) return;
@@ -67,6 +74,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         isClosable: true,
         position: "bottom",
       });
+      setLoading(false);
     }
   };
 
@@ -91,6 +99,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         );
         socket.emit("new message", data);
         setMessages([...messages, data]);
+        setFetchAgain(!fetchAgain);
       } catch (error) {
         toast({
           title: "Error Occured!",
@@ -108,12 +117,19 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     socket = io(ENDPOINT);
     socket.emit("setup", user);
     socket.on("connected", () => setSocketConnected(true));
-    socket.on("typing", () => setIsTyping(true));
-    socket.on("stop typing", () => setIsTyping(false));
-
-    // eslint-disable-next-line
+    socket.on("typing", (room) => {
+      if (selectedChatCompare._id !== room) {
+        return;
+      }
+      setIsTyping(true);
+    });
+    socket.on("stop typing", (room) => {
+      if (selectedChatCompare._id !== room) {
+        return;
+      }
+      setIsTyping(false);
+    });
   }, []);
-
   useEffect(() => {
     fetchMessages();
 
@@ -133,6 +149,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         }
       } else {
         setMessages([...messages, newMessageRecieved]);
+        setFetchAgain(!fetchAgain);
       }
     });
   });

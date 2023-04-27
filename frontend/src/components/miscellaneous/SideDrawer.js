@@ -19,7 +19,6 @@ import {
 import { Tooltip } from "@chakra-ui/tooltip";
 import { BellIcon, ChevronDownIcon } from "@chakra-ui/icons";
 import { Avatar } from "@chakra-ui/avatar";
-import { useHistory } from "react-router-dom";
 import { useState } from "react";
 import axios from "axios";
 import { useToast } from "@chakra-ui/toast";
@@ -45,16 +44,11 @@ function SideDrawer() {
     setNotification,
     chats,
     setChats,
+    handleLogout,
   } = ChatState();
 
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const history = useHistory();
-
-  const logoutHandler = () => {
-    localStorage.removeItem("userInfo");
-    history.push("/");
-  };
 
   const handleSearch = async () => {
     if (!search) {
@@ -173,12 +167,26 @@ function SideDrawer() {
                   key={notif._id}
                   onClick={() => {
                     setSelectedChat(notif.chat);
-                    setNotification(notification.filter((n) => n !== notif));
+                    setNotification(
+                      notification.filter((n) => n.chat._id !== notif.chat._id)
+                    );
                   }}
                 >
-                  {notif.chat.isGroupChat
-                    ? `New Message in ${notif.chat.chatName}`
-                    : `New Message from ${getSender(user, notif.chat.users)}`}
+                  {notif.chat.isGroupChat ? (
+                    <span>
+                      New Message in{" "}
+                      <b>
+                        <i>{notif.chat.chatName}</i>
+                      </b>
+                    </span>
+                  ) : (
+                    <span>
+                      New Message from{" "}
+                      <b>
+                        <i>{getSender(user, notif.chat.users)}</i>
+                      </b>
+                    </span>
+                  )}
                 </MenuItem>
               ))}
             </MenuList>
@@ -197,7 +205,7 @@ function SideDrawer() {
                 <MenuItem>My Profile</MenuItem>{" "}
               </ProfileModal>
               <MenuDivider />
-              <MenuItem onClick={logoutHandler}>Logout</MenuItem>
+              <MenuItem onClick={handleLogout}>Logout</MenuItem>
             </MenuList>
           </Menu>
         </div>
